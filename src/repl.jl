@@ -128,10 +128,9 @@ function bilge(;
                 end
             end
 
-            # Show response (strip <think>...</think> blocks from thinking models)
-            response_text = replace(result.response, r"<think>[\s\S]*?</think>\s*"s => "")
+            # Show response
             println()
-            println(strip(response_text))
+            println(result.response)
             println()
 
             # Show token usage (subtle)

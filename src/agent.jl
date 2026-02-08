@@ -3,6 +3,18 @@
 # ============================================================================
 
 """
+    _strip_think_tags(text)
+
+Remove <think>...</think> blocks from model output (common in reasoning models).
+"""
+function _strip_think_tags(text::Union{String, Nothing})
+    isnothing(text) && return nothing
+    cleaned = replace(text, r"<think>[\s\S]*?</think>\s*"s => "")
+    cleaned = strip(cleaned)
+    return isempty(cleaned) ? nothing : String(cleaned)
+end
+
+"""
     BilgeAgent
 
 AI-powered coding copilot agent. Supports both OpenAI-compatible and Ollama backends.
@@ -130,6 +142,10 @@ function process_turn(agent::BilgeAgent, user_input::AbstractString)
     for _round in 1:agent.config.max_tool_rounds
         response = _call_backend(agent, messages)
         assistant_msg = _parse_backend(agent, response)
+
+        # Strip <think> tags from reasoning models
+        clean_content = _strip_think_tags(assistant_msg.content)
+        assistant_msg = Message("assistant", clean_content, assistant_msg.tool_calls, nothing)
 
         # Track tokens
         (in_tok, out_tok) = _extract_usage(agent, response)

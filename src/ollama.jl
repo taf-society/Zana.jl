@@ -158,10 +158,67 @@ function call_ollama_openai_compat(config::OllamaConfig, messages::Vector{Messag
 end
 
 """
+    _extract_tool_calls_from_text(content)
+
+Fallback parser: extract tool calls from text content when models embed them
+in their output instead of using the native tool calling API. Handles common
+patterns like <tool_call>...</tool_call> and ```json {"name":...} ``` blocks.
+
+Returns (cleaned_content, tool_calls) where tool_calls may be nothing.
+"""
+function _extract_tool_calls_from_text(content::AbstractString)
+    tool_calls = ToolCall[]
+
+    # Pattern 1: <tool_call>{"name": "...", "arguments": {...}}</tool_call>
+    for m in eachmatch(r"<tool_call>\s*(\{.*?\})\s*</tool_call>"s, content)
+        try
+            obj = JSON3.read(m.captures[1], Dict{String, Any})
+            name = get(obj, "name", nothing)
+            args = get(obj, "arguments", Dict{String, Any}())
+            if !isnothing(name)
+                if args isa AbstractString
+                    args = JSON3.read(args, Dict{String, Any})
+                else
+                    args = Dict{String, Any}(String(k) => v for (k, v) in pairs(args))
+                end
+                push!(tool_calls, ToolCall(string(uuid4()), String(name), args))
+            end
+        catch
+        end
+    end
+
+    # Pattern 2: {"name": "tool_name", "arguments": {...}} as standalone JSON
+    if isempty(tool_calls)
+        for m in eachmatch(r"\{[^{}]*\"name\"\s*:\s*\"(\w+)\"[^{}]*\"arguments\"\s*:\s*(\{[^}]*\})[^{}]*\}"s, content)
+            try
+                name = String(m.captures[1])
+                args = JSON3.read(m.captures[2], Dict{String, Any})
+                push!(tool_calls, ToolCall(string(uuid4()), name, args))
+            catch
+            end
+        end
+    end
+
+    if isempty(tool_calls)
+        return (content, nothing)
+    end
+
+    # Clean the tool call patterns from content
+    cleaned = replace(content, r"<tool_call>\s*\{.*?\}\s*</tool_call>"s => "")
+    cleaned = strip(cleaned)
+    if isempty(cleaned)
+        cleaned = nothing
+    end
+
+    return (cleaned, tool_calls)
+end
+
+"""
     parse_ollama_response(config, response)
 
 Parse Ollama response into Message and tool calls.
 Handles both native and OpenAI-compatible formats.
+Falls back to text parsing if the model embeds tool calls in content.
 """
 function parse_ollama_response(config::OllamaConfig, response)
     if config.use_openai_compat
@@ -179,6 +236,7 @@ function parse_ollama_response(config::OllamaConfig, response)
 
     tool_calls = nothing
 
+    # First: check native tool_calls field
     if haskey(message, "tool_calls") && !isnothing(message["tool_calls"])
         tc_list = message["tool_calls"]
         if length(tc_list) > 0
@@ -199,6 +257,11 @@ function parse_ollama_response(config::OllamaConfig, response)
                 ))
             end
         end
+    end
+
+    # Fallback: if no native tool calls, try parsing from text content
+    if isnothing(tool_calls) && !isnothing(content)
+        (content, tool_calls) = _extract_tool_calls_from_text(content)
     end
 
     return Message("assistant", content, tool_calls, nothing)
