@@ -148,11 +148,9 @@ using Bilge
             result = tool.fn(Dict{String, Any}("command" => "ls /nonexistent_dir_12345"))
             @test result["exit_code"] != 0
 
-            # Check working directory
-            if Sys.iswindows()
-                result = tool.fn(Dict{String, Any}("command" => "cd"))
-                @test strip(result["stdout"]) == test_dir
-            else
+            # Check working directory (bash pwd returns POSIX paths on Windows,
+            # so we only verify on Unix where paths match)
+            if !Sys.iswindows()
                 result = tool.fn(Dict{String, Any}("command" => "pwd"))
                 @test strip(result["stdout"]) == test_dir
             end
