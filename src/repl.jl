@@ -200,7 +200,7 @@ end
 
 Handle a slash command. Returns true to continue the REPL, false to exit.
 """
-function _handle_slash_command(agent::BilgeAgent, input::String)
+function _handle_slash_command(agent::BilgeAgent, input::AbstractString)
     cmd = lowercase(strip(input))
     parts = split(cmd, r"\s+"; limit=2)
     command = parts[1]
