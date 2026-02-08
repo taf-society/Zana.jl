@@ -1,6 +1,6 @@
-# ============================================================================
-# BilgeAgent - Coding Copilot Agent
-# ============================================================================
+
+
+
 
 """
     _strip_think_tags(text)
@@ -69,9 +69,8 @@ function execute_tool(agent::BilgeAgent, name::String, args::Dict)
     return Dict("error" => "Unknown tool: $name")
 end
 
-# ============================================================================
-# Backend Dispatch
-# ============================================================================
+
+
 
 function _call_backend(agent::BilgeAgent, messages::Vector{Message})
     if !isnothing(agent.config.ollama)
@@ -97,11 +96,11 @@ function _extract_usage(agent::BilgeAgent, response)
 
     try
         if !isnothing(agent.config.ollama) && !agent.config.ollama.use_openai_compat
-            # Native Ollama: tokens in eval_count / prompt_eval_count
+
             input_tokens = get(response, "prompt_eval_count", 0)
             output_tokens = get(response, "eval_count", 0)
         else
-            # OpenAI-compatible format
+
             if haskey(response, "usage")
                 usage = response["usage"]
                 input_tokens = get(usage, "prompt_tokens", 0)
@@ -114,9 +113,8 @@ function _extract_usage(agent::BilgeAgent, response)
     return (input_tokens, output_tokens)
 end
 
-# ============================================================================
-# Core Agent Loop
-# ============================================================================
+
+
 
 """
     process_turn(agent, user_input; on_event=nothing) -> TurnResult
@@ -132,10 +130,8 @@ The optional `on_event` callback receives status updates:
 function process_turn(agent::BilgeAgent, user_input::AbstractString; on_event::Union{Function, Nothing}=nothing)
     _emit(args...) = !isnothing(on_event) && on_event(args...)
 
-    # Push user message to conversation history
     push!(agent.state.conversation_history, Message("user", user_input))
 
-    # Build full message list: system prompt + conversation history
     messages = Message[
         Message("system", agent.system_prompt);
         agent.state.conversation_history
@@ -145,27 +141,22 @@ function process_turn(agent::BilgeAgent, user_input::AbstractString; on_event::U
     total_in = 0
     total_out = 0
 
-    # Tool-calling loop
     for _round in 1:agent.config.max_tool_rounds
         _emit(:thinking)
         response = _call_backend(agent, messages)
         assistant_msg = _parse_backend(agent, response)
 
-        # Strip <think> tags from reasoning models
         clean_content = _strip_think_tags(assistant_msg.content)
         assistant_msg = Message("assistant", clean_content, assistant_msg.tool_calls, nothing)
 
-        # Track tokens
         (in_tok, out_tok) = _extract_usage(agent, response)
         total_in += in_tok
         total_out += out_tok
 
-        # If no tool calls, we have the final response
         if isnothing(assistant_msg.tool_calls) || isempty(assistant_msg.tool_calls)
-            # Store assistant response in history
+
             push!(agent.state.conversation_history, assistant_msg)
 
-            # Update global token counts
             agent.state.turn_count += 1
             agent.state.total_tokens_in += total_in
             agent.state.total_tokens_out += total_out
@@ -178,7 +169,6 @@ function process_turn(agent::BilgeAgent, user_input::AbstractString; on_event::U
             )
         end
 
-        # Execute tool calls
         push!(messages, assistant_msg)
         push!(agent.state.conversation_history, assistant_msg)
 
@@ -200,7 +190,6 @@ function process_turn(agent::BilgeAgent, user_input::AbstractString; on_event::U
         end
     end
 
-    # Exceeded max tool rounds
     agent.state.turn_count += 1
     agent.state.total_tokens_in += total_in
     agent.state.total_tokens_out += total_out

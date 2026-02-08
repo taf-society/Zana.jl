@@ -1,6 +1,6 @@
-# ============================================================================
-# Ollama LLM Interface for Bilge.jl
-# ============================================================================
+
+
+
 
 """
     OllamaConfig
@@ -10,7 +10,6 @@ Configuration for Ollama API calls.
 Supports both the native Ollama API (`/api/chat`) and the OpenAI-compatible
 endpoint (`/v1/chat/completions`).
 
-# Fields
 - `model::String` - Model name (e.g., "llama3.1", "qwen2.5", "mistral")
 - `host::String` - Ollama server address (default: "http://localhost:11434")
 - `max_tokens::Int` - Maximum tokens in response (default: 4096)
@@ -25,9 +24,8 @@ Base.@kwdef struct OllamaConfig
     use_openai_compat::Bool = false
 end
 
-# ============================================================================
-# Native Ollama API
-# ============================================================================
+
+
 
 """
     tools_to_ollama_format(tools)
@@ -169,7 +167,6 @@ Returns (cleaned_content, tool_calls) where tool_calls may be nothing.
 function _extract_tool_calls_from_text(content::AbstractString)
     tool_calls = ToolCall[]
 
-    # Pattern 1: <tool_call>{"name": "...", "arguments": {...}}</tool_call>
     for m in eachmatch(r"<tool_call>\s*(\{.*?\})\s*</tool_call>"s, content)
         try
             obj = JSON3.read(m.captures[1], Dict{String, Any})
@@ -187,7 +184,6 @@ function _extract_tool_calls_from_text(content::AbstractString)
         end
     end
 
-    # Pattern 2: {"name": "tool_name", "arguments": {...}} as standalone JSON
     if isempty(tool_calls)
         for m in eachmatch(r"\{[^{}]*\"name\"\s*:\s*\"(\w+)\"[^{}]*\"arguments\"\s*:\s*(\{[^}]*\})[^{}]*\}"s, content)
             try
@@ -203,7 +199,6 @@ function _extract_tool_calls_from_text(content::AbstractString)
         return (content, nothing)
     end
 
-    # Clean the tool call patterns from content
     cleaned = replace(content, r"<tool_call>\s*\{.*?\}\s*</tool_call>"s => "")
     cleaned = strip(cleaned)
     if isempty(cleaned)
@@ -222,11 +217,10 @@ Falls back to text parsing if the model embeds tool calls in content.
 """
 function parse_ollama_response(config::OllamaConfig, response)
     if config.use_openai_compat
-        # OpenAI-compatible format: same as parse_llm_response
+
         return parse_llm_response(response)
     end
 
-    # Native Ollama format
     message = response["message"]
 
     content = get(message, "content", nothing)
@@ -236,14 +230,13 @@ function parse_ollama_response(config::OllamaConfig, response)
 
     tool_calls = nothing
 
-    # First: check native tool_calls field
     if haskey(message, "tool_calls") && !isnothing(message["tool_calls"])
         tc_list = message["tool_calls"]
         if length(tc_list) > 0
             tool_calls = ToolCall[]
             for tc in tc_list
                 fn = tc["function"]
-                # Ollama native format: arguments is already a dict, not a JSON string
+
                 args = if fn["arguments"] isa AbstractString
                     JSON3.read(fn["arguments"], Dict{String, Any})
                 else
@@ -259,7 +252,6 @@ function parse_ollama_response(config::OllamaConfig, response)
         end
     end
 
-    # Fallback: if no native tool calls, try parsing from text content
     if isnothing(tool_calls) && !isnothing(content)
         (content, tool_calls) = _extract_tool_calls_from_text(content)
     end
@@ -267,16 +259,14 @@ function parse_ollama_response(config::OllamaConfig, response)
     return Message("assistant", content, tool_calls, nothing)
 end
 
-# ============================================================================
-# Ollama Utilities
-# ============================================================================
+
+
 
 """
     list_ollama_models(; host="http://localhost:11434")
 
 List available models on the Ollama server.
 
-# Returns
 - `Vector{String}` of model names
 """
 function list_ollama_models(; host::String = "http://localhost:11434")
@@ -296,7 +286,6 @@ end
 
 Check if Ollama server is running and accessible.
 
-# Returns
 - `Bool` - true if server is reachable
 """
 function check_ollama_connection(; host::String = "http://localhost:11434")

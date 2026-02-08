@@ -1,6 +1,6 @@
-# ============================================================================
-# LLM API Interface for Bilge.jl
-# ============================================================================
+
+
+
 
 """
     LLMConfig
@@ -48,7 +48,7 @@ function messages_to_openai_format(messages::Vector{Message})
         if !isnothing(msg.content)
             d["content"] = msg.content
         elseif msg.role == "assistant"
-            # OpenAI API requires explicit null content for assistant messages with tool_calls
+
             d["content"] = nothing
         end
 

@@ -1,13 +1,12 @@
-# ============================================================================
-# REPL Interface for Bilge.jl
-# ============================================================================
+
+
+
 
 """
     bilge(; api_key, model, base_url, ollama, host, use_openai_compat, working_dir)
 
 Start the Bilge interactive coding copilot.
 
-# Keyword Arguments
 - `api_key::String` - OpenAI API key (default: ENV["OPENAI_API_KEY"])
 - `model::String` - Model name (default: "gpt-4o" or "llama3.1" for Ollama)
 - `base_url::String` - API base URL (default: "https://api.openai.com/v1")
@@ -16,17 +15,13 @@ Start the Bilge interactive coding copilot.
 - `use_openai_compat::Bool` - Use Ollama's OpenAI-compatible endpoint (default: false)
 - `working_dir::String` - Working directory (default: pwd())
 
-# Example
 ```julia
 using Bilge
 
-# Using Ollama
 bilge(ollama=true, model="qwen3")
 
-# Using OpenAI
 bilge(api_key="sk-...")
 
-# Using custom OpenAI-compatible API
 bilge(api_key="key", base_url="https://api.example.com/v1", model="my-model")
 ```
 """
@@ -39,7 +34,7 @@ function bilge(;
     use_openai_compat::Bool = false,
     working_dir::String = pwd()
 )
-    # Build config
+
     config = if ollama
         model_name = something(model, "llama3.1")
         ollama_cfg = OllamaConfig(
@@ -64,24 +59,20 @@ function bilge(;
         BilgeConfig(llm = llm_cfg)
     end
 
-    # Resolve working directory
     working_dir = abspath(working_dir)
     if !isdir(working_dir)
         println("\n  Error: Working directory not found: $working_dir\n")
         return
     end
 
-    # Create agent
     agent = BilgeAgent(config, working_dir)
 
-    # Determine model name for display
     display_model = if ollama
         agent.config.ollama.model
     else
         agent.config.llm.model
     end
 
-    # Print banner
     println()
     println("  \e[1;36mBilge\e[0m — Julia Coding Copilot")
     println("  Model: \e[33m$display_model\e[0m")
@@ -89,15 +80,14 @@ function bilge(;
     println("  Type /help for commands, /exit to quit")
     println()
 
-    # Interactive loop
     while true
-        # Prompt
+
         printstyled("bilge> ", color=:cyan, bold=true)
         flush(stdout)
         input = _read_input()
 
         if isnothing(input)
-            # EOF
+
             println("\nGoodbye!")
             break
         end
@@ -107,7 +97,6 @@ function bilge(;
             continue
         end
 
-        # Handle slash commands
         if startswith(input, "/")
             should_continue = _handle_slash_command(agent, input)
             if !should_continue
@@ -116,7 +105,6 @@ function bilge(;
             continue
         end
 
-        # Process normal input
         try
             spinner_active = false
 
@@ -128,13 +116,13 @@ function bilge(;
                         printstyled("\n  Thinking...", color=:dark_gray)
                         flush(stdout)
                     else
-                        # Clear the "Thinking..." line for subsequent rounds
+
                         print("\r\e[2K")
                         printstyled("  Thinking...", color=:dark_gray)
                         flush(stdout)
                     end
                 elseif event === :tool_start
-                    # Clear the spinner line
+
                     print("\r\e[2K")
                     flush(stdout)
                 elseif event === :tool_done
@@ -146,17 +134,14 @@ function bilge(;
 
             result = process_turn(agent, input; on_event=on_event)
 
-            # Clear any remaining spinner
             if spinner_active
                 print("\r\e[2K")
             end
 
-            # Show response
             println()
             println(result.response)
             println()
 
-            # Show token usage (subtle)
             if result.input_tokens > 0 || result.output_tokens > 0
                 printstyled("  [tokens: $(result.input_tokens) in / $(result.output_tokens) out]\n",
                            color=:dark_gray)
@@ -193,9 +178,8 @@ function _read_input()
             rethrow(e)
         end
 
-        # Detect true EOF: only when stdin is actually closed.
-        # Avoid eof(stdin) on a TTY — it can return true spuriously
-        # in the Julia REPL, causing the prompt to exit immediately.
+
+
         if isempty(lines) && isempty(line)
             if !isopen(stdin)
                 return nothing
@@ -257,7 +241,7 @@ function _handle_slash_command(agent::BilgeAgent, input::AbstractString)
             new_dir = abspath(strip(String(parts[2])))
             if isdir(new_dir)
                 agent.state.working_directory = new_dir
-                # Rebuild tools and system prompt with new working directory
+
                 agent.tools = _create_tools(agent.state, agent.config.max_output_chars)
                 agent.system_prompt = build_system_prompt(new_dir)
                 println("  Working directory: $new_dir")
@@ -319,7 +303,7 @@ function _show_history(agent::BilgeAgent)
                     println(preview)
                 end
             elseif role == "tool"
-                # Skip tool results in history view for brevity
+
             end
         end
     end
@@ -332,7 +316,7 @@ end
 Print a brief summary of a tool execution.
 """
 function _print_tool_summary(exec::ToolExecution)
-    # Build a brief context string
+
     context = if exec.tool_name == "read_file"
         path = get(exec.arguments, "file_path", "")
         "  $path"

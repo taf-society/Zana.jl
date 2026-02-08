@@ -1,6 +1,6 @@
-# ============================================================================
-# Tool Implementations for Bilge.jl — Coding Copilot Tools
-# ============================================================================
+
+
+
 
 """
     _resolve_path(state, path)
@@ -26,9 +26,8 @@ function _truncate_output(text::String, max_chars::Int)
     return text[1:max_chars] * "\n\n[Output truncated at $max_chars characters]"
 end
 
-# ============================================================================
-# Tool: read_file
-# ============================================================================
+
+
 
 function create_read_file_tool(state::BilgeState)
     Tool(
@@ -72,7 +71,7 @@ function create_read_file_tool(state::BilgeState)
                 numbered = String[]
                 for i in start_line:end_line
                     line = lines[i]
-                    # Truncate very long lines
+
                     if length(line) > 2000
                         line = line[1:2000] * "..."
                     end
@@ -89,9 +88,8 @@ function create_read_file_tool(state::BilgeState)
     )
 end
 
-# ============================================================================
-# Tool: write_file
-# ============================================================================
+
+
 
 function create_write_file_tool(state::BilgeState)
     Tool(
@@ -116,7 +114,6 @@ function create_write_file_tool(state::BilgeState)
                 path = _resolve_path(state, args["file_path"])
                 content = args["content"]
 
-                # Create parent directories
                 mkpath(dirname(path))
 
                 write(path, content)
@@ -128,9 +125,8 @@ function create_write_file_tool(state::BilgeState)
     )
 end
 
-# ============================================================================
-# Tool: edit_file
-# ============================================================================
+
+
 
 function create_edit_file_tool(state::BilgeState)
     Tool(
@@ -166,7 +162,6 @@ function create_edit_file_tool(state::BilgeState)
 
                 content = read(path, String)
 
-                # Count occurrences
                 n_occurrences = 0
                 search_from = 1
                 while true
@@ -194,9 +189,8 @@ function create_edit_file_tool(state::BilgeState)
     )
 end
 
-# ============================================================================
-# Tool: run_bash
-# ============================================================================
+
+
 
 function create_run_bash_tool(state::BilgeState, max_output_chars::Int)
     Tool(
@@ -228,7 +222,6 @@ function create_run_bash_tool(state::BilgeState, max_output_chars::Int)
                 cmd = ignorestatus(Cmd(`bash -c $cmd_str`; dir=state.working_directory))
                 proc = run(pipeline(cmd, stdout=out, stderr=err); wait=false)
 
-                # Wait with timeout
                 timed_out = false
                 deadline = time() + timeout_secs
                 while process_running(proc)
@@ -265,9 +258,8 @@ function create_run_bash_tool(state::BilgeState, max_output_chars::Int)
     )
 end
 
-# ============================================================================
-# Tool: glob_files
-# ============================================================================
+
+
 
 function create_glob_files_tool(state::BilgeState)
     Tool(
@@ -296,12 +288,11 @@ function create_glob_files_tool(state::BilgeState)
                     return Dict("error" => "Directory not found: $search_dir")
                 end
 
-                # Convert glob pattern to regex
                 regex = _glob_to_regex(pattern)
 
                 matches = String[]
                 for (root, dirs, files) in walkdir(search_dir)
-                    # Skip hidden directories
+
                     filter!(d -> !startswith(d, "."), dirs)
 
                     for file in files
@@ -314,10 +305,8 @@ function create_glob_files_tool(state::BilgeState)
                     end
                 end
 
-                # Sort by mtime (newest first)
                 sort!(matches; by = f -> mtime(joinpath(search_dir, f)), rev=true)
 
-                # Limit results
                 if length(matches) > 500
                     matches = matches[1:500]
                     return Dict("files" => matches, "total" => length(matches),
@@ -345,7 +334,7 @@ function _glob_to_regex(pattern::String)
         c = pattern[i]
         if c == '*'
             if i < length(pattern) && pattern[i+1] == '*'
-                # ** matches everything including /
+
                 if i + 2 <= length(pattern) && pattern[i+2] == '/'
                     regex_str *= "(.+/)?"
                     i += 3
@@ -373,9 +362,8 @@ function _glob_to_regex(pattern::String)
     return Regex(regex_str)
 end
 
-# ============================================================================
-# Tool: grep_code
-# ============================================================================
+
+
 
 function create_grep_code_tool(state::BilgeState, max_output_chars::Int)
     Tool(
@@ -410,7 +398,6 @@ function create_grep_code_tool(state::BilgeState, max_output_chars::Int)
                 ctx = get(args, "context", 0)
                 ctx = ctx isa AbstractString ? parse(Int, ctx) : Int(ctx)
 
-                # Build grep command
                 cmd_parts = ["grep", "-rn"]
 
                 if ctx > 0
@@ -431,7 +418,6 @@ function create_grep_code_tool(state::BilgeState, max_output_chars::Int)
                 output = String(take!(out))
                 output = _truncate_output(output, max_output_chars)
 
-                # Make paths relative to working directory
                 if startswith(search_path, state.working_directory)
                     output = replace(output, state.working_directory * "/" => "")
                 end
@@ -439,7 +425,7 @@ function create_grep_code_tool(state::BilgeState, max_output_chars::Int)
                 return Dict("matches" => output, "exit_code" => proc.exitcode)
             catch e
                 err_str = sprint(showerror, e)
-                # grep returns exit code 1 when no matches found
+
                 if contains(err_str, "failed process") || contains(err_str, "exit code 1")
                     return Dict("matches" => "", "note" => "No matches found")
                 end
@@ -449,9 +435,8 @@ function create_grep_code_tool(state::BilgeState, max_output_chars::Int)
     )
 end
 
-# ============================================================================
-# Tool: list_directory
-# ============================================================================
+
+
 
 function create_list_directory_tool(state::BilgeState)
     Tool(
