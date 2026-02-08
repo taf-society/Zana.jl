@@ -219,7 +219,7 @@ using Bilge
     end
 
     @testset "System prompt" begin
-        prompt = Bilge.build_system_prompt("/home/test")
+        prompt = Bilge.build_system_prompt("/home/test", "test-model")
         @test contains(prompt, "Bilge")
         @test contains(prompt, "/home/test")
         @test contains(prompt, "read_file")
