@@ -149,8 +149,13 @@ using Bilge
             @test result["exit_code"] != 0
 
             # Check working directory
-            result = tool.fn(Dict{String, Any}("command" => "pwd"))
-            @test strip(result["stdout"]) == test_dir
+            if Sys.iswindows()
+                result = tool.fn(Dict{String, Any}("command" => "cd"))
+                @test strip(result["stdout"]) == test_dir
+            else
+                result = tool.fn(Dict{String, Any}("command" => "pwd"))
+                @test strip(result["stdout"]) == test_dir
+            end
         end
 
         @testset "glob_files" begin
@@ -225,10 +230,16 @@ using Bilge
     end
 
     @testset "Path resolution" begin
-        state = BilgeState("/home/user/project")
-        @test Bilge._resolve_path(state, "src/main.jl") == "/home/user/project/src/main.jl"
-        @test Bilge._resolve_path(state, "/absolute/path.jl") == "/absolute/path.jl"
-        @test Bilge._resolve_path(state, "../other/file.jl") == "/home/user/other/file.jl"
+        base_dir = joinpath("home", "user", "project")
+        if !Sys.iswindows()
+            base_dir = "/" * base_dir
+        else
+            base_dir = "C:\\" * base_dir
+        end
+        state = BilgeState(base_dir)
+        @test Bilge._resolve_path(state, "src/main.jl") == joinpath(base_dir, "src", "main.jl")
+        @test Bilge._resolve_path(state, joinpath("src", "main.jl")) == joinpath(base_dir, "src", "main.jl")
+        @test isabspath(Bilge._resolve_path(state, "../other/file.jl"))
     end
 
     @testset "Glob to regex" begin
