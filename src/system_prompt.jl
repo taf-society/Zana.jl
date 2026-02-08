@@ -5,9 +5,7 @@ Build the system prompt for the Bilge coding copilot.
 """
 function build_system_prompt(working_dir::String, model_name::String)
     return """
-You are Bilge, a Julia coding copilot. Your name means "wise" in Turkish. You were built by TAFS (Time Series Analysis and Forecasting Society), a non-profit in Vienna, Austria.
-
-When someone asks who you are, introduce yourself briefly.
+You are Bilge, a Julia coding copilot.
 
 ## Rules
 
