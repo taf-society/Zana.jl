@@ -1,6 +1,6 @@
 # Bilge.jl
 
-![Bilge.jl logo](assets/logo.png)
+![Bilge.jl logo](assets/logo.svg)
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://akai01.github.io/Bilge.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://akai01.github.io/Bilge.jl/dev/) [![Build Status](https://github.com/akai01/Bilge.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/akai01/Bilge.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/akai01/Bilge.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/akai01/Bilge.jl)
 

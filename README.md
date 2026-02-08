@@ -1,5 +1,5 @@
 <div align="center">
-<img src="docs/src/assets/logo.png"/>
+<img src="docs/src/assets/logo.svg"/>
 </div>
 
 # Bilge.jl
