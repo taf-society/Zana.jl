@@ -243,7 +243,14 @@ function _handle_slash_command(agent::BilgeAgent, input::AbstractString)
                 agent.state.working_directory = new_dir
 
                 agent.tools = _create_tools(agent.state, agent.config.max_output_chars)
-                agent.system_prompt = build_system_prompt(new_dir)
+                model_name = if !isnothing(agent.config.ollama)
+                    agent.config.ollama.model
+                elseif !isnothing(agent.config.llm)
+                    agent.config.llm.model
+                else
+                    "unknown"
+                end
+                agent.system_prompt = build_system_prompt(new_dir, model_name)
                 println("  Working directory: $new_dir")
             else
                 println("  Error: Not a directory: $new_dir")

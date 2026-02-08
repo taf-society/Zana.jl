@@ -34,7 +34,14 @@ Create a BilgeAgent with the given configuration and working directory.
 function BilgeAgent(config::BilgeConfig, working_dir::String)
     state = BilgeState(working_dir)
     tools = _create_tools(state, config.max_output_chars)
-    prompt = build_system_prompt(working_dir)
+    model_name = if !isnothing(config.ollama)
+        config.ollama.model
+    elseif !isnothing(config.llm)
+        config.llm.model
+    else
+        "unknown"
+    end
+    prompt = build_system_prompt(working_dir, model_name)
     return BilgeAgent(config, state, tools, prompt)
 end
 
