@@ -11,6 +11,10 @@ function _strip_think_tags(text::Union{String, Nothing})
     isnothing(text) && return nothing
     cleaned = replace(text, r"<think>[\s\S]*?</think>\s*"s => "")
     cleaned = strip(cleaned)
+    if isempty(cleaned)
+        cleaned = replace(text, r"</?think>" => "")
+        cleaned = strip(cleaned)
+    end
     return isempty(cleaned) ? nothing : String(cleaned)
 end
 

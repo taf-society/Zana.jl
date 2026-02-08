@@ -81,14 +81,10 @@ function bilge(;
     println()
 
     while true
-
-        printstyled("bilge> ", color=:cyan, bold=true)
-        flush(stdout)
-        input = _read_input()
+        input = _read_input(agent.state)
 
         if isnothing(input)
-
-            println("\nGoodbye!")
+            println("Goodbye!")
             break
         end
 
@@ -157,34 +153,254 @@ function bilge(;
 end
 
 """
-    _read_input()
+    _read_line_raw(prompt, color, history) -> Union{String, Nothing}
 
-Read user input, supporting multi-line with trailing backslash.
-Returns nothing on EOF.
+Read a single line from a TTY with arrow key history navigation.
+Supports: Up/Down (history), Left/Right (cursor), Home/End, Backspace, Delete,
+Ctrl-A/E/K/U/W/L, and UTF-8 input. Returns nothing on Ctrl-C or Ctrl-D.
 """
-function _read_input()
+function _read_line_raw(prompt::String, color::Symbol, history::Vector{String})
+    printstyled(prompt, color=color, bold=true)
+    flush(stdout)
+
+    ret = ccall(:uv_tty_set_mode, Cint, (Ptr{Cvoid}, Cint), stdin.handle, Int32(1))
+    if ret != 0
+        try
+            return readline(stdin)
+        catch e
+            (e isa InterruptException || e isa Base.IOError) && return nothing
+            rethrow(e)
+        end
+    end
+
+    buf = Char[]
+    cursor_pos = 0
+    hist_idx = length(history) + 1
+    saved_input = ""
+
+    function redraw()
+        print("\r\e[2K")
+        printstyled(prompt, color=color, bold=true)
+        print(String(buf))
+        chars_after = length(buf) - cursor_pos
+        if chars_after > 0
+            print("\e[$(chars_after)D")
+        end
+        flush(stdout)
+    end
+
+    try
+        while true
+            b = read(stdin, UInt8)
+
+            if b == 0x0d || b == 0x0a  # Enter
+                print('\n')
+                return String(buf)
+
+            elseif b == 0x03  # Ctrl-C
+                print('\n')
+                return nothing
+
+            elseif b == 0x04  # Ctrl-D
+                if isempty(buf)
+                    print('\n')
+                    return nothing
+                end
+
+            elseif b == 0x7f || b == 0x08  # Backspace
+                if cursor_pos > 0
+                    deleteat!(buf, cursor_pos)
+                    cursor_pos -= 1
+                    redraw()
+                end
+
+            elseif b == 0x1b  # ESC
+                b2 = read(stdin, UInt8)
+                if b2 == UInt8('[')
+                    b3 = read(stdin, UInt8)
+                    if b3 == UInt8('A')  # Up
+                        if hist_idx > 1
+                            if hist_idx == length(history) + 1
+                                saved_input = String(buf)
+                            end
+                            hist_idx -= 1
+                            empty!(buf)
+                            append!(buf, collect(history[hist_idx]))
+                            cursor_pos = length(buf)
+                            redraw()
+                        end
+                    elseif b3 == UInt8('B')  # Down
+                        if hist_idx <= length(history)
+                            hist_idx += 1
+                            empty!(buf)
+                            if hist_idx > length(history)
+                                append!(buf, collect(saved_input))
+                            else
+                                append!(buf, collect(history[hist_idx]))
+                            end
+                            cursor_pos = length(buf)
+                            redraw()
+                        end
+                    elseif b3 == UInt8('C')  # Right
+                        if cursor_pos < length(buf)
+                            cursor_pos += 1
+                            print("\e[C")
+                            flush(stdout)
+                        end
+                    elseif b3 == UInt8('D')  # Left
+                        if cursor_pos > 0
+                            cursor_pos -= 1
+                            print("\e[D")
+                            flush(stdout)
+                        end
+                    elseif b3 == UInt8('H')  # Home
+                        cursor_pos = 0
+                        redraw()
+                    elseif b3 == UInt8('F')  # End
+                        cursor_pos = length(buf)
+                        redraw()
+                    elseif b3 == UInt8('3')  # Delete (ESC [ 3 ~)
+                        b4 = read(stdin, UInt8)
+                        if b4 == UInt8('~') && cursor_pos < length(buf)
+                            deleteat!(buf, cursor_pos + 1)
+                            redraw()
+                        end
+                    end
+                end
+
+            elseif b == 0x01  # Ctrl-A (Home)
+                cursor_pos = 0
+                redraw()
+
+            elseif b == 0x05  # Ctrl-E (End)
+                cursor_pos = length(buf)
+                redraw()
+
+            elseif b == 0x0b  # Ctrl-K (Kill to end of line)
+                if cursor_pos < length(buf)
+                    deleteat!(buf, (cursor_pos + 1):length(buf))
+                    redraw()
+                end
+
+            elseif b == 0x15  # Ctrl-U (Kill to start of line)
+                if cursor_pos > 0
+                    deleteat!(buf, 1:cursor_pos)
+                    cursor_pos = 0
+                    redraw()
+                end
+
+            elseif b == 0x17  # Ctrl-W (Delete word backward)
+                if cursor_pos > 0
+                    new_pos = cursor_pos
+                    while new_pos > 0 && buf[new_pos] == ' '
+                        new_pos -= 1
+                    end
+                    while new_pos > 0 && buf[new_pos] != ' '
+                        new_pos -= 1
+                    end
+                    deleteat!(buf, (new_pos + 1):cursor_pos)
+                    cursor_pos = new_pos
+                    redraw()
+                end
+
+            elseif b == 0x0c  # Ctrl-L (Clear screen)
+                print("\e[2J\e[H")
+                redraw()
+
+            elseif b == 0x09  # Tab - ignore
+                continue
+
+            elseif b >= 0x20 && b < 0x7f  # Printable ASCII
+                cursor_pos += 1
+                insert!(buf, cursor_pos, Char(b))
+                redraw()
+
+            elseif b >= 0xc0  # UTF-8 multi-byte start
+                n_bytes = b < 0xe0 ? 2 : b < 0xf0 ? 3 : 4
+                bytes = UInt8[b]
+                for _ in 2:n_bytes
+                    push!(bytes, read(stdin, UInt8))
+                end
+                try
+                    ch = first(String(bytes))
+                    cursor_pos += 1
+                    insert!(buf, cursor_pos, ch)
+                    redraw()
+                catch
+                end
+            end
+        end
+    catch e
+        if e isa InterruptException
+            print('\n')
+            return nothing
+        end
+        rethrow(e)
+    finally
+        ccall(:uv_tty_set_mode, Cint, (Ptr{Cvoid}, Cint), stdin.handle, Int32(0))
+    end
+end
+
+"""
+    _read_input(state)
+
+Read user input with history navigation and multi-line support.
+Returns nothing on EOF or Ctrl-C.
+"""
+function _read_input(state::BilgeState)
+    if stdin isa Base.TTY
+        return _read_input_tty(state)
+    else
+        return _read_input_pipe()
+    end
+end
+
+function _read_input_tty(state::BilgeState)
+    lines = String[]
+
+    while true
+        prompt = isempty(lines) ? "bilge> " : "  ...> "
+        history = isempty(lines) ? state.input_history : String[]
+        line = _read_line_raw(prompt, :cyan, history)
+
+        if isnothing(line)
+            return isempty(lines) ? nothing : join(lines, "\n")
+        end
+
+        if endswith(line, "\\")
+            push!(lines, line[1:end-1])
+        else
+            push!(lines, line)
+            break
+        end
+    end
+
+    result = join(lines, "\n")
+    stripped = strip(result)
+    if !isempty(stripped)
+        push!(state.input_history, stripped)
+    end
+    return result
+end
+
+function _read_input_pipe()
+    printstyled("bilge> ", color=:cyan, bold=true)
+    flush(stdout)
     lines = String[]
 
     while true
         line = try
             readline(stdin)
         catch e
-            if e isa InterruptException
-                return nothing
-            end
-            if e isa Base.IOError
-                return nothing
-            end
+            (e isa InterruptException || e isa Base.IOError) && return nothing
             rethrow(e)
         end
-
-
 
         if isempty(lines) && isempty(line)
             if !isopen(stdin)
                 return nothing
             end
-            if !(stdin isa Base.TTY) && eof(stdin)
+            if eof(stdin)
                 return nothing
             end
         end

@@ -46,9 +46,10 @@ Mutable state maintained across the coding session.
 mutable struct BilgeState
     working_directory::String
     conversation_history::Vector{Message}
+    input_history::Vector{String}
     turn_count::Int
     total_tokens_in::Int
     total_tokens_out::Int
 end
 
-BilgeState(working_dir::String) = BilgeState(working_dir, Message[], 0, 0, 0)
+BilgeState(working_dir::String) = BilgeState(working_dir, Message[], String[], 0, 0, 0)

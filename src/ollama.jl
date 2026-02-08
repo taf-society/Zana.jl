@@ -12,14 +12,14 @@ endpoint (`/v1/chat/completions`).
 
 - `model::String` - Model name (e.g., "llama3.1", "qwen2.5", "mistral")
 - `host::String` - Ollama server address (default: "http://localhost:11434")
-- `max_tokens::Int` - Maximum tokens in response (default: 4096)
+- `max_tokens::Int` - Maximum tokens in response (default: 32768)
 - `temperature::Float64` - Sampling temperature (default: 0.1)
 - `use_openai_compat::Bool` - Use OpenAI-compatible endpoint (default: false)
 """
 Base.@kwdef struct OllamaConfig
     model::String = "llama3.1"
     host::String = "http://localhost:11434"
-    max_tokens::Int = 4096
+    max_tokens::Int = 32768
     temperature::Float64 = 0.1
     use_openai_compat::Bool = false
 end
@@ -226,6 +226,13 @@ function parse_ollama_response(config::OllamaConfig, response)
     content = get(message, "content", nothing)
     if content isa AbstractString && isempty(strip(content))
         content = nothing
+    end
+
+    if isnothing(content) && haskey(message, "thinking")
+        thinking = message["thinking"]
+        if thinking isa AbstractString && !isempty(strip(thinking))
+            content = String(strip(thinking))
+        end
     end
 
     tool_calls = nothing
