@@ -119,12 +119,19 @@ end
 # ============================================================================
 
 """
-    process_turn(agent, user_input) -> TurnResult
+    process_turn(agent, user_input; on_event=nothing) -> TurnResult
 
 Process a single conversation turn. Sends the user message to the LLM,
 executes any tool calls, and returns the final response.
+
+The optional `on_event` callback receives status updates:
+- `(:thinking,)` — LLM is generating a response
+- `(:tool_start, name, args)` — a tool is about to execute
+- `(:tool_done, exec)` — a tool finished (ToolExecution)
 """
-function process_turn(agent::BilgeAgent, user_input::AbstractString)
+function process_turn(agent::BilgeAgent, user_input::AbstractString; on_event::Union{Function, Nothing}=nothing)
+    _emit(args...) = !isnothing(on_event) && on_event(args...)
+
     # Push user message to conversation history
     push!(agent.state.conversation_history, Message("user", user_input))
 
@@ -140,6 +147,7 @@ function process_turn(agent::BilgeAgent, user_input::AbstractString)
 
     # Tool-calling loop
     for _round in 1:agent.config.max_tool_rounds
+        _emit(:thinking)
         response = _call_backend(agent, messages)
         assistant_msg = _parse_backend(agent, response)
 
@@ -175,13 +183,16 @@ function process_turn(agent::BilgeAgent, user_input::AbstractString)
         push!(agent.state.conversation_history, assistant_msg)
 
         for tc in assistant_msg.tool_calls
+            _emit(:tool_start, tc.name, tc.arguments)
             t_start = time_ns()
             result = execute_tool(agent, tc.name, tc.arguments)
             t_end = time_ns()
             duration_ms = Int(round((t_end - t_start) / 1_000_000))
 
             result_str = JSON3.write(result)
-            push!(tool_executions, ToolExecution(tc.name, tc.arguments, result_str, duration_ms))
+            exec = ToolExecution(tc.name, tc.arguments, result_str, duration_ms)
+            push!(tool_executions, exec)
+            _emit(:tool_done, exec)
 
             tool_msg = format_tool_result(tc.id, result)
             push!(messages, tool_msg)

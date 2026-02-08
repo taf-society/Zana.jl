@@ -118,14 +118,37 @@ function bilge(;
 
         # Process normal input
         try
-            result = process_turn(agent, input)
+            spinner_active = false
 
-            # Show tool execution summary
-            if !isempty(result.tool_executions)
-                println()
-                for exec in result.tool_executions
+            function on_event(args...)
+                event = args[1]
+                if event === :thinking
+                    if !spinner_active
+                        spinner_active = true
+                        printstyled("\n  Thinking...", color=:dark_gray)
+                        flush(stdout)
+                    else
+                        # Clear the "Thinking..." line for subsequent rounds
+                        print("\r\e[2K")
+                        printstyled("  Thinking...", color=:dark_gray)
+                        flush(stdout)
+                    end
+                elseif event === :tool_start
+                    # Clear the spinner line
+                    print("\r\e[2K")
+                    flush(stdout)
+                elseif event === :tool_done
+                    exec = args[2]
                     _print_tool_summary(exec)
+                    flush(stdout)
                 end
+            end
+
+            result = process_turn(agent, input; on_event=on_event)
+
+            # Clear any remaining spinner
+            if spinner_active
+                print("\r\e[2K")
             end
 
             # Show response
@@ -139,6 +162,7 @@ function bilge(;
                            color=:dark_gray)
             end
         catch e
+            print("\r\e[2K")  # Clear spinner if active
             println()
             printstyled("  Error: ", color=:red, bold=true)
             println(sprint(showerror, e))
