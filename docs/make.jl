@@ -30,6 +30,6 @@ makedocs(
 )
 
 deploydocs(
-    repo      = "github.com/akai01/Bilge.jl",
+    repo      = "github.com/taf-society/Bilge.jl",
     devbranch = "main",
 )

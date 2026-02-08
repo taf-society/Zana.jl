@@ -2,7 +2,7 @@
 
 ![Bilge.jl logo](assets/logo.svg)
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://akai01.github.io/Bilge.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://akai01.github.io/Bilge.jl/dev/) [![Build Status](https://github.com/akai01/Bilge.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/akai01/Bilge.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/akai01/Bilge.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/akai01/Bilge.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://taf-society.github.io/Bilge.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://taf-society.github.io/Bilge.jl/dev/) [![Build Status](https://github.com/taf-society/Bilge.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/taf-society/Bilge.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/taf-society/Bilge.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/taf-society/Bilge.jl)
 
 **Bilge** is a REPL-based AI coding copilot for Julia. It connects to LLMs (OpenAI, Ollama, or any OpenAI-compatible API) and gives them tools to read, write, edit, and search your codebase — all from an interactive terminal session.
 
@@ -25,7 +25,7 @@ Bilge is under active development. For the latest dev version:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/akai01/Bilge.jl")
+Pkg.add(url="https://github.com/taf-society/Bilge.jl")
 ```
 
 For local development:

@@ -6,7 +6,7 @@ Install the development version:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/akai01/Bilge.jl")
+Pkg.add(url="https://github.com/taf-society/Bilge.jl")
 ```
 
 Or for local development:
