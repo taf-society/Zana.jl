@@ -19,6 +19,47 @@ function _strip_think_tags(text::Union{String, Nothing})
 end
 
 """
+    _truncate_repetition(text; max_repeats=3)
+
+Detect and truncate repetitive LLM output. If any sentence (>= 10 chars) appears
+`max_repeats` or more times, the text is truncated after the 2nd occurrence and a
+warning is appended. Short responses (< 200 chars) bypass the check entirely.
+"""
+function _truncate_repetition(text::Union{String, Nothing}; max_repeats::Int=3)
+    isnothing(text) && return nothing
+    length(text) < 200 && return text
+
+    sentences = split(text, r"(?<=[.!?\n])\s*")
+    sentences = [strip(s) for s in sentences if length(strip(s)) >= 10]
+
+    counts = Dict{String, Int}()
+    for s in sentences
+        counts[s] = get(counts, s, 0) + 1
+    end
+
+    repeated = [s for (s, c) in counts if c >= max_repeats]
+    isempty(repeated) && return text
+
+    # Truncate after the 2nd occurrence of the first repeated sentence
+    target = first(repeated)
+    seen = 0
+    parts = split(text, r"(?<=[.!?\n])\s*")
+    output = String[]
+    for part in parts
+        if strip(part) == target
+            seen += 1
+            if seen > 2
+                push!(output, "\n\n[Warning: Repetitive output detected and truncated.]")
+                break
+            end
+        end
+        push!(output, String(part))
+    end
+
+    return join(output, " ")
+end
+
+"""
     ZanaAgent
 
 AI-powered coding copilot agent. Supports both OpenAI-compatible and Ollama backends.
@@ -170,6 +211,7 @@ function process_turn(agent::ZanaAgent, user_input::AbstractString; on_event::Un
         assistant_msg = _parse_backend(agent, response)
 
         clean_content = _strip_think_tags(assistant_msg.content)
+        clean_content = _truncate_repetition(clean_content)
         assistant_msg = Message("assistant", clean_content, assistant_msg.tool_calls, nothing)
 
         (in_tok, out_tok) = _extract_usage(agent, response)
