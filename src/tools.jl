@@ -7,7 +7,7 @@
 
 Resolve a path relative to the working directory. Absolute paths pass through.
 """
-function _resolve_path(state::BilgeState, path::String)
+function _resolve_path(state::ZanaState, path::String)
     if isabspath(path)
         return path
     end
@@ -29,7 +29,7 @@ end
 
 
 
-function create_read_file_tool(state::BilgeState)
+function create_read_file_tool(state::ZanaState)
     Tool(
         "read_file",
         "Read the contents of a file with line numbers. Supports offset and limit for large files. Default limit is 2000 lines.",
@@ -91,7 +91,7 @@ end
 
 
 
-function create_write_file_tool(state::BilgeState)
+function create_write_file_tool(state::ZanaState)
     Tool(
         "write_file",
         "Create or overwrite a file with the given content. Parent directories are created automatically.",
@@ -128,7 +128,7 @@ end
 
 
 
-function create_edit_file_tool(state::BilgeState)
+function create_edit_file_tool(state::ZanaState)
     Tool(
         "edit_file",
         "Perform an exact string replacement in a file. The old_string must appear exactly once in the file. Use this for surgical edits to existing files.",
@@ -192,7 +192,7 @@ end
 
 
 
-function create_run_bash_tool(state::BilgeState, max_output_chars::Int)
+function create_run_bash_tool(state::ZanaState, max_output_chars::Int)
     Tool(
         "run_bash",
         "Execute a bash command in the working directory. Returns stdout and stderr. Use for git, build tools, running tests, etc.",
@@ -261,7 +261,7 @@ end
 
 
 
-function create_glob_files_tool(state::BilgeState)
+function create_glob_files_tool(state::ZanaState)
     Tool(
         "glob_files",
         "Find files matching a glob pattern. Supports patterns like '**/*.jl', 'src/*.jl', '*.toml'. Results sorted by modification time (newest first).",
@@ -365,7 +365,7 @@ end
 
 
 
-function create_grep_code_tool(state::BilgeState, max_output_chars::Int)
+function create_grep_code_tool(state::ZanaState, max_output_chars::Int)
     Tool(
         "grep_code",
         "Search for a regex pattern in files. Returns matching lines with file paths and line numbers. Supports file type filtering with glob patterns.",
@@ -438,7 +438,7 @@ end
 
 
 
-function create_list_directory_tool(state::BilgeState)
+function create_list_directory_tool(state::ZanaState)
     Tool(
         "list_directory",
         "List the contents of a directory. Shows directories with '/' suffix and files with sizes.",

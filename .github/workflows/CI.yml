@@ -73,6 +73,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using Bilge
-          DocMeta.setdocmeta!(Bilge, :DocTestSetup, :(using Bilge); recursive=true)
-          doctest(Bilge)
+          using Zana
+          DocMeta.setdocmeta!(Zana, :DocTestSetup, :(using Zana); recursive=true)
+          doctest(Zana)

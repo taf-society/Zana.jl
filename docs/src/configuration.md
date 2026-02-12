@@ -1,17 +1,18 @@
 # Configuration
 
-Bilge uses a nested configuration system with `BilgeConfig` as the top-level struct. You can configure either an OpenAI-compatible backend (`LLMConfig`) or a local Ollama backend (`OllamaConfig`).
+Zana uses a nested configuration system with `ZanaConfig` as the top-level struct. You can configure an OpenAI-compatible backend (`LLMConfig`), a local Ollama backend (`OllamaConfig`), or an Anthropic Claude backend (`ClaudeConfig`).
 
 ---
 
-## `BilgeConfig`
+## `ZanaConfig`
 
-Top-level configuration. Set either `llm` or `ollama` (not both).
+Top-level configuration. Set one of `llm`, `ollama`, or `claude`.
 
 ```julia
-BilgeConfig(;
+ZanaConfig(;
     llm::Union{LLMConfig, Nothing} = nothing,
     ollama::Union{OllamaConfig, Nothing} = nothing,
+    claude::Union{ClaudeConfig, Nothing} = nothing,
     max_tool_rounds::Int = 50,
     max_output_chars::Int = 100_000,
 )
@@ -21,6 +22,7 @@ BilgeConfig(;
 |-------|------|---------|-------------|
 | `llm` | `Union{LLMConfig, Nothing}` | `nothing` | OpenAI-compatible backend configuration |
 | `ollama` | `Union{OllamaConfig, Nothing}` | `nothing` | Ollama backend configuration |
+| `claude` | `Union{ClaudeConfig, Nothing}` | `nothing` | Anthropic Claude backend configuration |
 | `max_tool_rounds` | `Int` | `50` | Maximum tool-call rounds per turn |
 | `max_output_chars` | `Int` | `100_000` | Truncate tool output beyond this limit |
 
@@ -28,17 +30,22 @@ BilgeConfig(;
 
 ```julia
 # OpenAI backend
-config = BilgeConfig(
+config = ZanaConfig(
     llm = LLMConfig(api_key="sk-...")
 )
 
 # Ollama backend
-config = BilgeConfig(
+config = ZanaConfig(
     ollama = OllamaConfig(model="qwen3")
 )
 
+# Claude backend
+config = ZanaConfig(
+    claude = ClaudeConfig(api_key="sk-ant-...")
+)
+
 # Custom limits
-config = BilgeConfig(
+config = ZanaConfig(
     ollama = OllamaConfig(model="qwen3"),
     max_tool_rounds = 100,
     max_output_chars = 200_000,
@@ -91,7 +98,7 @@ llm = LLMConfig(
 ```
 
 !!! tip "API Key from Environment"
-    When using the `bilge()` REPL function, the API key is automatically read from `ENV["OPENAI_API_KEY"]` if not provided explicitly.
+    When using the `zana()` REPL function, the API key is automatically read from `ENV["OPENAI_API_KEY"]` if not provided explicitly.
 
 ---
 
@@ -142,11 +149,56 @@ ollama = OllamaConfig(
 
 ---
 
+## `ClaudeConfig`
+
+Configuration for the Anthropic Claude backend. Uses the Anthropic Messages API directly.
+
+```julia
+ClaudeConfig(;
+    api_key::String,
+    model::String = "claude-sonnet-4-20250514",
+    base_url::String = "https://api.anthropic.com",
+    max_tokens::Int = 8192,
+    temperature::Float64 = 0.1,
+    api_version::String = "2023-06-01",
+)
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `api_key` | `String` | *required* | Anthropic API key |
+| `model` | `String` | `"claude-sonnet-4-20250514"` | Claude model identifier |
+| `base_url` | `String` | `"https://api.anthropic.com"` | API base URL |
+| `max_tokens` | `Int` | `8192` | Maximum tokens in response |
+| `temperature` | `Float64` | `0.1` | Sampling temperature (lower = more deterministic) |
+| `api_version` | `String` | `"2023-06-01"` | Anthropic API version header |
+
+### Examples
+
+```julia
+# Default Claude Sonnet
+claude = ClaudeConfig(api_key="sk-ant-...")
+
+# Claude Opus with higher token limit
+claude = ClaudeConfig(
+    api_key = "sk-ant-...",
+    model = "claude-opus-4-20250514",
+    max_tokens = 16384,
+)
+```
+
+!!! tip "API Key from Environment"
+    When using the `zana(claude=true)` REPL function, the API key is automatically read from `ENV["ANTHROPIC_API_KEY"]` if not provided explicitly.
+
+For more details on Claude integration, see [Claude Integration](claude.md).
+
+---
+
 ## State Types
 
-### `BilgeState`
+### `ZanaState`
 
-Mutable state maintained across the session. Created automatically by `BilgeAgent`.
+Mutable state maintained across the session. Created automatically by `ZanaAgent`.
 
 | Field | Type | Description |
 |-------|------|-------------|

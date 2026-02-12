@@ -1,6 +1,6 @@
 # Tools
 
-Bilge equips the LLM with 7 coding tools for interacting with your codebase. The LLM autonomously decides which tools to use based on your request.
+Zana equips the LLM with 7 coding tools for interacting with your codebase. The LLM autonomously decides which tools to use based on your request.
 
 ---
 
@@ -32,7 +32,7 @@ Read file contents with line numbers and optional offset/limit.
 
 ### Behavior
 
-- Returns file contents with line numbers (e.g., `  1│ module Bilge`)
+- Returns file contents with line numbers (e.g., `  1│ module Zana`)
 - Lines longer than 2000 characters are truncated with a notice
 - Returns total line count and lines shown
 - Handles missing files with an error message
@@ -41,7 +41,7 @@ Read file contents with line numbers and optional offset/limit.
 
 ```json
 {
-  "content": "  1│ module Bilge\n  2│ \n  3│ using HTTP\n...",
+  "content": "  1│ module Zana\n  2│ \n  3│ using HTTP\n...",
   "total_lines": 37,
   "lines_shown": 37
 }
@@ -205,7 +205,7 @@ Search file contents with regex patterns.
 
 ```json
 {
-  "matches": "src/agent.jl:115:function process_turn(agent::BilgeAgent, user_input::AbstractString)\nsrc/repl.jl:121:            result = process_turn(agent, input)",
+  "matches": "src/agent.jl:115:function process_turn(agent::ZanaAgent, user_input::AbstractString)\nsrc/repl.jl:121:            result = process_turn(agent, input)",
   "exit_code": 0
 }
 ```

@@ -3,33 +3,37 @@
 
 
 """
-    bilge(; api_key, model, base_url, ollama, host, use_openai_compat, working_dir)
+    zana(; api_key, model, base_url, ollama, claude, host, use_openai_compat, working_dir)
 
-Start the Bilge interactive coding copilot.
+Start the Zana interactive coding copilot.
 
-- `api_key::String` - OpenAI API key (default: ENV["OPENAI_API_KEY"])
-- `model::String` - Model name (default: "gpt-4o" or "llama3.1" for Ollama)
+- `api_key::String` - API key (default: ENV["OPENAI_API_KEY"] or ENV["ANTHROPIC_API_KEY"])
+- `model::String` - Model name (default: "gpt-4o", "llama3.1", or "claude-sonnet-4-20250514")
 - `base_url::String` - API base URL (default: "https://api.openai.com/v1")
 - `ollama::Bool` - Use Ollama backend (default: false)
+- `claude::Bool` - Use Anthropic Claude backend (default: false)
 - `host::String` - Ollama host (default: "http://localhost:11434")
 - `use_openai_compat::Bool` - Use Ollama's OpenAI-compatible endpoint (default: false)
 - `working_dir::String` - Working directory (default: pwd())
 
 ```julia
-using Bilge
+using Zana
 
-bilge(ollama=true, model="qwen3")
+zana(ollama=true, model="qwen3")
 
-bilge(api_key="sk-...")
+zana(claude=true)
 
-bilge(api_key="key", base_url="https://api.example.com/v1", model="my-model")
+zana(api_key="sk-...")
+
+zana(api_key="key", base_url="https://api.example.com/v1", model="my-model")
 ```
 """
-function bilge(;
+function zana(;
     api_key::Union{String, Nothing} = nothing,
     model::Union{String, Nothing} = nothing,
     base_url::String = "https://api.openai.com/v1",
     ollama::Bool = false,
+    claude::Bool = false,
     host::String = "http://localhost:11434",
     use_openai_compat::Bool = false,
     working_dir::String = pwd()
@@ -42,7 +46,20 @@ function bilge(;
             host = host,
             use_openai_compat = use_openai_compat
         )
-        BilgeConfig(ollama = ollama_cfg)
+        ZanaConfig(ollama = ollama_cfg)
+    elseif claude
+        key = something(api_key, get(ENV, "ANTHROPIC_API_KEY", nothing))
+        if isnothing(key)
+            println("\n  Error: No API key provided.")
+            println("  Set ANTHROPIC_API_KEY or pass api_key= keyword.\n")
+            return
+        end
+        model_name = something(model, "claude-sonnet-4-20250514")
+        claude_cfg = ClaudeConfig(
+            api_key = key,
+            model = model_name
+        )
+        ZanaConfig(claude = claude_cfg)
     else
         key = something(api_key, get(ENV, "OPENAI_API_KEY", nothing))
         if isnothing(key)
@@ -56,7 +73,7 @@ function bilge(;
             model = model_name,
             base_url = base_url
         )
-        BilgeConfig(llm = llm_cfg)
+        ZanaConfig(llm = llm_cfg)
     end
 
     working_dir = abspath(working_dir)
@@ -65,16 +82,18 @@ function bilge(;
         return
     end
 
-    agent = BilgeAgent(config, working_dir)
+    agent = ZanaAgent(config, working_dir)
 
-    display_model = if ollama
+    display_model = if claude
+        agent.config.claude.model
+    elseif ollama
         agent.config.ollama.model
     else
         agent.config.llm.model
     end
 
     println()
-    println("  \e[1;36mBilge\e[0m — Julia Coding Copilot")
+    println("  \e[1;36mZana\e[0m — Julia Coding Copilot")
     println("  Model: \e[33m$display_model\e[0m")
     println("  Working directory: \e[32m$working_dir\e[0m")
     println("  Type /help for commands, /exit to quit")
@@ -347,7 +366,7 @@ end
 Read user input with history navigation and multi-line support.
 Returns nothing on EOF or Ctrl-C.
 """
-function _read_input(state::BilgeState)
+function _read_input(state::ZanaState)
     if stdin isa Base.TTY
         return _read_input_tty(state)
     else
@@ -355,11 +374,11 @@ function _read_input(state::BilgeState)
     end
 end
 
-function _read_input_tty(state::BilgeState)
+function _read_input_tty(state::ZanaState)
     lines = String[]
 
     while true
-        prompt = isempty(lines) ? "bilge> " : "  ...> "
+        prompt = isempty(lines) ? "zana> " : "  ...> "
         history = isempty(lines) ? state.input_history : String[]
         line = _read_line_raw(prompt, :cyan, history)
 
@@ -384,7 +403,7 @@ function _read_input_tty(state::BilgeState)
 end
 
 function _read_input_pipe()
-    printstyled("bilge> ", color=:cyan, bold=true)
+    printstyled("zana> ", color=:cyan, bold=true)
     flush(stdout)
     lines = String[]
 
@@ -423,7 +442,7 @@ end
 
 Handle a slash command. Returns true to continue the REPL, false to exit.
 """
-function _handle_slash_command(agent::BilgeAgent, input::AbstractString)
+function _handle_slash_command(agent::ZanaAgent, input::AbstractString)
     cmd = lowercase(strip(input))
     parts = split(cmd, r"\s+"; limit=2)
     command = parts[1]
@@ -459,7 +478,9 @@ function _handle_slash_command(agent::BilgeAgent, input::AbstractString)
                 agent.state.working_directory = new_dir
 
                 agent.tools = _create_tools(agent.state, agent.config.max_output_chars)
-                model_name = if !isnothing(agent.config.ollama)
+                model_name = if !isnothing(agent.config.claude)
+                    agent.config.claude.model
+                elseif !isnothing(agent.config.ollama)
                     agent.config.ollama.model
                 elseif !isnothing(agent.config.llm)
                     agent.config.llm.model
@@ -478,7 +499,7 @@ function _handle_slash_command(agent::BilgeAgent, input::AbstractString)
     elseif command == "/help"
         println()
         println("  \e[1mCommands:\e[0m")
-        println("  /exit, /quit   Exit Bilge")
+        println("  /exit, /quit   Exit Zana")
         println("  /clear         Clear conversation history")
         println("  /history       Show conversation history")
         println("  /tokens        Show token usage")
@@ -503,7 +524,7 @@ end
 
 Display a summary of the conversation history.
 """
-function _show_history(agent::BilgeAgent)
+function _show_history(agent::ZanaAgent)
     println()
     if isempty(agent.state.conversation_history)
         println("  No conversation history.")
