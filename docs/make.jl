@@ -4,13 +4,13 @@ Pkg.develop(PackageSpec(path=joinpath(@__DIR__, "..")))
 Pkg.instantiate()
 
 using Documenter
-using Bilge
+using Zana
 
 const ON_CI = get(ENV, "CI", "false") == "true"
 
 makedocs(
-    sitename = "Bilge.jl",
-    modules  = [Bilge],
+    sitename = "Zana.jl",
+    modules  = [Zana],
     format   = Documenter.HTML(
         prettyurls = ON_CI,
         assets     = ["assets/theme.css"],
@@ -19,10 +19,11 @@ makedocs(
         "Home" => "index.md",
         "Quick Start" => "quickstart.md",
         "User Guide" => Any[
-            "REPL Interface"     => "repl.md",
-            "Tools"              => "tools.md",
-            "Configuration"      => "configuration.md",
-            "Ollama Integration" => "ollama.md",
+            "REPL Interface"      => "repl.md",
+            "Tools"               => "tools.md",
+            "Configuration"       => "configuration.md",
+            "Ollama Integration"  => "ollama.md",
+            "Claude Integration"  => "claude.md",
         ],
         "API Reference" => "api.md",
     ],
@@ -30,6 +31,6 @@ makedocs(
 )
 
 deploydocs(
-    repo      = "github.com/taf-society/Bilge.jl",
+    repo      = "github.com/taf-society/Zana.jl",
     devbranch = "main",
 )

@@ -2,15 +2,15 @@
 <img src="docs/src/assets/logo.svg"/>
 </div>
 
-# Bilge.jl
+# Zana.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://taf-society.github.io/Bilge.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://taf-society.github.io/Bilge.jl/dev/) [![Build Status](https://github.com/taf-society/Bilge.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/taf-society/Bilge.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/taf-society/Bilge.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/taf-society/Bilge.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://taf-society.github.io/Zana.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://taf-society.github.io/Zana.jl/dev/) [![Build Status](https://github.com/taf-society/Zana.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/taf-society/Zana.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/taf-society/Zana.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/taf-society/Zana.jl)
 
 ## About
 
-**Bilge** is a REPL-based AI coding copilot for Julia. It connects to LLMs (OpenAI, Ollama, or any OpenAI-compatible API) and gives them tools to read, write, edit, and search your codebase — all from an interactive terminal session.
+**Zana** is a REPL-based AI coding copilot for Julia. It connects to LLMs (OpenAI, Anthropic Claude, Ollama, or any OpenAI-compatible API) and gives them tools to read, write, edit, and search your codebase — all from an interactive terminal session.
 
-Bilge — Turkish for "wise", embodies the pursuit of intelligent assistance through language models. Like a knowledgeable companion at your side, Bilge brings the reasoning power of modern AI directly into your Julia development workflow.
+Zana — Kurdish for "wise/scholar", embodies the pursuit of intelligent assistance through language models. Like a knowledgeable companion at your side, Zana brings the reasoning power of modern AI directly into your Julia development workflow.
 
 This package is currently under development and will be part of the **TAFS Open Source Ecosystem**.
 
@@ -29,23 +29,23 @@ As a registered non-profit association under Austrian law, TAFS ensures that all
 
 ## License
 
-The Bilge package is licensed under the **MIT License**, allowing for open-source distribution and collaboration.
+The Zana package is licensed under the **MIT License**, allowing for open-source distribution and collaboration.
 
 ## Installation
 
-Bilge is still in development. Once it is officially released, you will be able to install it using Julia's package manager.
+Zana is still in development. Once it is officially released, you will be able to install it using Julia's package manager.
 
 For the latest development version, you can install directly from GitHub:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/taf-society/Bilge.jl")
+Pkg.add(url="https://github.com/taf-society/Zana.jl")
 ```
 
 For local development:
 
 ```julia
-] dev /path/to/Bilge.jl
+] dev /path/to/Zana.jl
 ```
 
 ## Quick Start
@@ -53,44 +53,56 @@ For local development:
 ### With Ollama (Local Models)
 
 ```julia
-using Bilge
+using Zana
 
 # Start with a local Ollama model
-bilge(ollama=true, model="qwen3")
+zana(ollama=true, model="qwen3")
+```
+
+### With Anthropic Claude
+
+```julia
+using Zana
+
+# Reads ANTHROPIC_API_KEY from environment
+zana(claude=true)
+
+# Or pass the key directly
+zana(claude=true, api_key="sk-ant-...")
 ```
 
 ### With OpenAI
 
 ```julia
-using Bilge
+using Zana
 
 # Reads OPENAI_API_KEY from environment
-bilge()
+zana()
 
 # Or pass the key directly
-bilge(api_key="sk-...")
+zana(api_key="sk-...")
 ```
 
 ### With Any OpenAI-Compatible API
 
 ```julia
-using Bilge
+using Zana
 
-bilge(api_key="your-key", base_url="https://api.example.com/v1", model="your-model")
+zana(api_key="your-key", base_url="https://api.example.com/v1", model="your-model")
 ```
 
 ---
 
 ## REPL Interface (Primary Usage)
 
-Once inside the Bilge REPL, you have a full interactive coding assistant at your disposal. The assistant can read, write, edit, and search your project using 7 built-in tools.
+Once inside the Zana REPL, you have a full interactive coding assistant at your disposal. The assistant can read, write, edit, and search your project using 7 built-in tools.
 
 ### REPL Commands
 
 | Command | Description |
 |---------|-------------|
 | `/help` | Show available commands |
-| `/exit`, `/quit` | Exit Bilge |
+| `/exit`, `/quit` | Exit Zana |
 | `/clear` | Clear conversation history |
 | `/history` | Show conversation history |
 | `/tokens` | Show cumulative token usage |
@@ -101,7 +113,7 @@ Once inside the Bilge REPL, you have a full interactive coding assistant at your
 Use a trailing `\` for multi-line input:
 
 ```
-bilge> Write a function that \
+zana> Write a function that \
   ...> parses CSV files and \
   ...> returns a DataFrame.
 ```
@@ -110,7 +122,7 @@ bilge> Write a function that \
 
 ## Available Tools
 
-Bilge gives the LLM 7 tools to work with your codebase:
+Zana gives the LLM 7 tools to work with your codebase:
 
 | Tool | Description | Use Case |
 |------|-------------|----------|
@@ -126,16 +138,16 @@ Bilge gives the LLM 7 tools to work with your codebase:
 
 ## Programmatic Usage (Agent API)
 
-You can use `BilgeAgent` and `process_turn` directly without the REPL:
+You can use `ZanaAgent` and `process_turn` directly without the REPL:
 
 ```julia
-using Bilge
+using Zana
 
-config = BilgeConfig(
+config = ZanaConfig(
     ollama = OllamaConfig(model="qwen3")
 )
 
-agent = BilgeAgent(config, pwd())
+agent = ZanaAgent(config, pwd())
 result = process_turn(agent, "List all Julia files in this project")
 
 # Access the response
@@ -160,16 +172,19 @@ end
 
 ## Configuration
 
-### `BilgeConfig`
+### `ZanaConfig`
 
 ```julia
-BilgeConfig(
+ZanaConfig(
     llm = LLMConfig(...),          # OpenAI-compatible backend
-    ollama = OllamaConfig(...),    # Ollama backend (set one or the other)
+    ollama = OllamaConfig(...),    # Ollama backend
+    claude = ClaudeConfig(...),    # Anthropic Claude backend
     max_tool_rounds = 50,          # Max tool-call rounds per turn
     max_output_chars = 100_000,    # Truncate tool output beyond this
 )
 ```
+
+Set one of `llm`, `ollama`, or `claude`.
 
 ### `LLMConfig`
 
@@ -195,12 +210,25 @@ OllamaConfig(
 )
 ```
 
+### `ClaudeConfig`
+
+```julia
+ClaudeConfig(
+    api_key = "sk-ant-...",
+    model = "claude-sonnet-4-20250514",
+    base_url = "https://api.anthropic.com",
+    max_tokens = 8192,
+    temperature = 0.1,
+    api_version = "2023-06-01",
+)
+```
+
 ---
 
 ## Ollama Utilities
 
 ```julia
-using Bilge
+using Zana
 
 # Check if Ollama is running
 check_ollama_connection()

@@ -1,6 +1,6 @@
 # Ollama Integration
 
-Bilge provides first-class support for [Ollama](https://ollama.ai/), allowing you to run a fully local AI coding copilot without any external API calls. This is ideal for privacy-sensitive work, offline development, or reducing API costs.
+Zana provides first-class support for [Ollama](https://ollama.ai/), allowing you to run a fully local AI coding copilot without any external API calls. This is ideal for privacy-sensitive work, offline development, or reducing API costs.
 
 ---
 
@@ -19,22 +19,22 @@ ollama pull llama3.1
 ollama pull codellama
 ```
 
-### 3. Start Bilge
+### 3. Start Zana
 
 ```julia
-using Bilge
+using Zana
 
-bilge(ollama=true, model="qwen3")
+zana(ollama=true, model="qwen3")
 ```
 
 ---
 
 ## Verifying the Connection
 
-Before starting Bilge, you can check that Ollama is running:
+Before starting Zana, you can check that Ollama is running:
 
 ```julia
-using Bilge
+using Zana
 
 # Check if Ollama server is reachable
 check_ollama_connection()  # Returns true/false
@@ -70,16 +70,16 @@ list_ollama_models()  # Returns Vector{String}
 
 ## Protocol Options
 
-Ollama supports two API protocols. Bilge works with both.
+Ollama supports two API protocols. Zana works with both.
 
 ### Native API (Default)
 
 Uses Ollama's native `/api/chat` endpoint:
 
 ```julia
-bilge(ollama=true, model="qwen3")
+zana(ollama=true, model="qwen3")
 # Equivalent to:
-bilge(ollama=true, model="qwen3", use_openai_compat=false)
+zana(ollama=true, model="qwen3", use_openai_compat=false)
 ```
 
 ### OpenAI-Compatible API
@@ -87,7 +87,7 @@ bilge(ollama=true, model="qwen3", use_openai_compat=false)
 Uses Ollama's `/v1/chat/completions` endpoint:
 
 ```julia
-bilge(ollama=true, model="qwen3", use_openai_compat=true)
+zana(ollama=true, model="qwen3", use_openai_compat=true)
 ```
 
 !!! note "When to Use OpenAI-Compatible Mode"
@@ -103,7 +103,7 @@ bilge(ollama=true, model="qwen3", use_openai_compat=true)
 You can connect to an Ollama instance running on a different machine:
 
 ```julia
-bilge(
+zana(
     ollama = true,
     model = "qwen3",
     host = "http://192.168.1.100:11434"
@@ -113,14 +113,14 @@ bilge(
 Or using the programmatic API:
 
 ```julia
-config = BilgeConfig(
+config = ZanaConfig(
     ollama = OllamaConfig(
         model = "qwen3",
         host = "http://192.168.1.100:11434"
     )
 )
 
-agent = BilgeAgent(config, pwd())
+agent = ZanaAgent(config, pwd())
 ```
 
 ---

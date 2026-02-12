@@ -6,67 +6,79 @@ Install the development version:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/taf-society/Bilge.jl")
+Pkg.add(url="https://github.com/taf-society/Zana.jl")
 ```
 
 Or for local development:
 
 ```julia
-] dev /path/to/Bilge.jl
+] dev /path/to/Zana.jl
 ```
 
 ## REPL Interface (Recommended)
 
-The REPL is the primary way to use Bilge. Start it with your preferred backend.
+The REPL is the primary way to use Zana. Start it with your preferred backend.
 
 ### Example 1: Ollama (Local Models)
 
 ```julia
-using Bilge
+using Zana
 
 # Start with a local Ollama model
-bilge(ollama=true, model="qwen3")
+zana(ollama=true, model="qwen3")
 ```
 
 !!! tip "Ollama Setup"
-    Make sure Ollama is running locally before starting Bilge. You can verify with:
+    Make sure Ollama is running locally before starting Zana. You can verify with:
     ```julia
-    using Bilge
+    using Zana
     check_ollama_connection()  # Returns true if Ollama is reachable
     list_ollama_models()       # Lists available models
     ```
 
-### Example 2: OpenAI
+### Example 2: Anthropic Claude
 
 ```julia
-using Bilge
+using Zana
 
-# Reads OPENAI_API_KEY from environment
-bilge()
+# Reads ANTHROPIC_API_KEY from environment
+zana(claude=true)
 
-# Or pass the key directly
-bilge(api_key="sk-...")
+# Or with a specific model
+zana(claude=true, model="claude-opus-4-20250514")
 ```
 
-### Example 3: Custom OpenAI-Compatible API
+### Example 3: OpenAI
 
 ```julia
-using Bilge
+using Zana
 
-bilge(
+# Reads OPENAI_API_KEY from environment
+zana()
+
+# Or pass the key directly
+zana(api_key="sk-...")
+```
+
+### Example 4: Custom OpenAI-Compatible API
+
+```julia
+using Zana
+
+zana(
     api_key = "your-key",
     base_url = "https://api.example.com/v1",
     model = "your-model"
 )
 ```
 
-### Example 4: Advanced Configuration
+### Example 5: Advanced Configuration
 
 ```julia
-using Bilge
+using Zana
 
 # Full Ollama configuration
-bilge(
+zana(
     ollama = true,
     model = "qwen3",
     host = "http://localhost:11434",
@@ -79,36 +91,36 @@ bilge(
 
 ## Using the REPL
 
-Once inside the Bilge REPL, you can ask the assistant to perform any coding task. The LLM has access to 7 tools and will autonomously decide which ones to use.
+Once inside the Zana REPL, you can ask the assistant to perform any coding task. The LLM has access to 7 tools and will autonomously decide which ones to use.
 
 ### Reading and Understanding Code
 
 ```
-bilge> Read the main module file and explain the architecture
+zana> Read the main module file and explain the architecture
 
-bilge> What does the process_turn function do?
+zana> What does the process_turn function do?
 
-bilge> Find all functions that handle HTTP requests
+zana> Find all functions that handle HTTP requests
 ```
 
 ### Writing and Editing Code
 
 ```
-bilge> Add a new function to parse JSON configuration files
+zana> Add a new function to parse JSON configuration files
 
-bilge> Fix the bug in the error handling of read_file
+zana> Fix the bug in the error handling of read_file
 
-bilge> Refactor the agent loop to support streaming responses
+zana> Refactor the agent loop to support streaming responses
 ```
 
 ### Running Commands
 
 ```
-bilge> Run the test suite and fix any failures
+zana> Run the test suite and fix any failures
 
-bilge> Check the git status and show recent commits
+zana> Check the git status and show recent commits
 
-bilge> List all TODO comments in the codebase
+zana> List all TODO comments in the codebase
 ```
 
 ### Multi-Line Input
@@ -116,7 +128,7 @@ bilge> List all TODO comments in the codebase
 Use a trailing `\` for complex prompts:
 
 ```
-bilge> Write a function that \
+zana> Write a function that \
   ...> takes a Vector{String} of file paths, \
   ...> reads each file, and \
   ...> returns a Dict mapping paths to contents.
@@ -127,7 +139,7 @@ bilge> Write a function that \
 | Command | Description |
 |---------|-------------|
 | `/help` | Show available commands |
-| `/exit`, `/quit` | Exit Bilge |
+| `/exit`, `/quit` | Exit Zana |
 | `/clear` | Clear conversation history |
 | `/history` | Show conversation history |
 | `/tokens` | Show cumulative token usage |
@@ -137,20 +149,20 @@ bilge> Write a function that \
 
 ## Programmatic Usage (Agent API)
 
-For scripts and automation, use `BilgeAgent` directly without the REPL.
+For scripts and automation, use `ZanaAgent` directly without the REPL.
 
 ### Basic Usage
 
 ```julia
-using Bilge
+using Zana
 
 # Create a configuration
-config = BilgeConfig(
+config = ZanaConfig(
     ollama = OllamaConfig(model="qwen3")
 )
 
 # Create an agent
-agent = BilgeAgent(config, pwd())
+agent = ZanaAgent(config, pwd())
 
 # Process a single turn
 result = process_turn(agent, "List all Julia files in this project")
@@ -162,13 +174,13 @@ println("Tokens: $(result.input_tokens) in / $(result.output_tokens) out")
 ### Multi-Turn Conversation
 
 ```julia
-using Bilge
+using Zana
 
-config = BilgeConfig(
+config = ZanaConfig(
     ollama = OllamaConfig(model="qwen3")
 )
 
-agent = BilgeAgent(config, pwd())
+agent = ZanaAgent(config, pwd())
 
 # First turn: ask about the project
 result1 = process_turn(agent, "What does this project do?")
@@ -213,6 +225,7 @@ end
 **Documentation:**
 - **[REPL Interface](repl.md)** — Full REPL documentation, commands, and session management
 - **[Tools](tools.md)** — Detailed guide for all 7 coding tools
-- **[Configuration](configuration.md)** — All configuration options for `BilgeConfig`, `LLMConfig`, and `OllamaConfig`
+- **[Configuration](configuration.md)** — All configuration options for `ZanaConfig`, `LLMConfig`, `OllamaConfig`, and `ClaudeConfig`
 - **[Ollama Integration](ollama.md)** — Local model setup, model selection, and utilities
+- **[Claude Integration](claude.md)** — Anthropic Claude setup and usage
 - **[API Reference](api.md)** — Complete API documentation

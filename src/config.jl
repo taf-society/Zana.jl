@@ -3,13 +3,14 @@
 
 
 """
-    BilgeConfig
+    ZanaConfig
 
-Configuration for the Bilge coding copilot.
+Configuration for the Zana coding copilot.
 """
-Base.@kwdef struct BilgeConfig
+Base.@kwdef struct ZanaConfig
     llm::Union{LLMConfig, Nothing} = nothing
     ollama::Union{OllamaConfig, Nothing} = nothing
+    claude::Union{ClaudeConfig, Nothing} = nothing
     max_tool_rounds::Int = 50
     max_output_chars::Int = 100_000
 end
@@ -39,11 +40,11 @@ struct TurnResult
 end
 
 """
-    BilgeState
+    ZanaState
 
 Mutable state maintained across the coding session.
 """
-mutable struct BilgeState
+mutable struct ZanaState
     working_directory::String
     conversation_history::Vector{Message}
     input_history::Vector{String}
@@ -52,4 +53,4 @@ mutable struct BilgeState
     total_tokens_out::Int
 end
 
-BilgeState(working_dir::String) = BilgeState(working_dir, Message[], String[], 0, 0, 0)
+ZanaState(working_dir::String) = ZanaState(working_dir, Message[], String[], 0, 0, 0)

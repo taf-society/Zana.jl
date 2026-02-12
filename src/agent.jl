@@ -19,26 +19,28 @@ function _strip_think_tags(text::Union{String, Nothing})
 end
 
 """
-    BilgeAgent
+    ZanaAgent
 
 AI-powered coding copilot agent. Supports both OpenAI-compatible and Ollama backends.
 """
-mutable struct BilgeAgent
-    config::BilgeConfig
-    state::BilgeState
+mutable struct ZanaAgent
+    config::ZanaConfig
+    state::ZanaState
     tools::Vector{Tool}
     system_prompt::String
 end
 
 """
-    BilgeAgent(config, working_dir)
+    ZanaAgent(config, working_dir)
 
-Create a BilgeAgent with the given configuration and working directory.
+Create a ZanaAgent with the given configuration and working directory.
 """
-function BilgeAgent(config::BilgeConfig, working_dir::String)
-    state = BilgeState(working_dir)
+function ZanaAgent(config::ZanaConfig, working_dir::String)
+    state = ZanaState(working_dir)
     tools = _create_tools(state, config.max_output_chars)
-    model_name = if !isnothing(config.ollama)
+    model_name = if !isnothing(config.claude)
+        config.claude.model
+    elseif !isnothing(config.ollama)
         config.ollama.model
     elseif !isnothing(config.llm)
         config.llm.model
@@ -46,7 +48,7 @@ function BilgeAgent(config::BilgeConfig, working_dir::String)
         "unknown"
     end
     prompt = build_system_prompt(working_dir, model_name)
-    return BilgeAgent(config, state, tools, prompt)
+    return ZanaAgent(config, state, tools, prompt)
 end
 
 """
@@ -54,7 +56,7 @@ end
 
 Create all coding tools for the agent.
 """
-function _create_tools(state::BilgeState, max_output_chars::Int)
+function _create_tools(state::ZanaState, max_output_chars::Int)
     return Tool[
         create_read_file_tool(state),
         create_write_file_tool(state),
@@ -71,7 +73,7 @@ end
 
 Execute a tool by name with the given arguments.
 """
-function execute_tool(agent::BilgeAgent, name::String, args::Dict)
+function execute_tool(agent::ZanaAgent, name::String, args::Dict)
     for tool in agent.tools
         if tool.name == name
             return tool.fn(args)
@@ -83,30 +85,40 @@ end
 
 
 
-function _call_backend(agent::BilgeAgent, messages::Vector{Message})
-    if !isnothing(agent.config.ollama)
+function _call_backend(agent::ZanaAgent, messages::Vector{Message})
+    if !isnothing(agent.config.claude)
+        return call_claude(agent.config.claude, messages, agent.tools)
+    elseif !isnothing(agent.config.ollama)
         return call_ollama(agent.config.ollama, messages, agent.tools)
     elseif !isnothing(agent.config.llm)
         return call_llm(agent.config.llm, messages, agent.tools)
     else
-        error("No LLM backend configured. Set either config.llm or config.ollama.")
+        error("No LLM backend configured. Set either config.llm, config.ollama, or config.claude.")
     end
 end
 
-function _parse_backend(agent::BilgeAgent, response)
-    if !isnothing(agent.config.ollama)
+function _parse_backend(agent::ZanaAgent, response)
+    if !isnothing(agent.config.claude)
+        return parse_claude_response(response)
+    elseif !isnothing(agent.config.ollama)
         return parse_ollama_response(agent.config.ollama, response)
     else
         return parse_llm_response(response)
     end
 end
 
-function _extract_usage(agent::BilgeAgent, response)
+function _extract_usage(agent::ZanaAgent, response)
     input_tokens = 0
     output_tokens = 0
 
     try
-        if !isnothing(agent.config.ollama) && !agent.config.ollama.use_openai_compat
+        if !isnothing(agent.config.claude)
+            if haskey(response, "usage")
+                usage = response["usage"]
+                input_tokens = get(usage, "input_tokens", 0)
+                output_tokens = get(usage, "output_tokens", 0)
+            end
+        elseif !isnothing(agent.config.ollama) && !agent.config.ollama.use_openai_compat
 
             input_tokens = get(response, "prompt_eval_count", 0)
             output_tokens = get(response, "eval_count", 0)
@@ -138,7 +150,7 @@ The optional `on_event` callback receives status updates:
 - `(:tool_start, name, args)` — a tool is about to execute
 - `(:tool_done, exec)` — a tool finished (ToolExecution)
 """
-function process_turn(agent::BilgeAgent, user_input::AbstractString; on_event::Union{Function, Nothing}=nothing)
+function process_turn(agent::ZanaAgent, user_input::AbstractString; on_event::Union{Function, Nothing}=nothing)
     _emit(args...) = !isnothing(on_event) && on_event(args...)
 
     push!(agent.state.conversation_history, Message("user", user_input))

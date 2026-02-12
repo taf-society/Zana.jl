@@ -1,12 +1,12 @@
-# Bilge.jl
+# Zana.jl
 
-![Bilge.jl logo](assets/logo.svg)
+![Zana.jl logo](assets/logo.svg)
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://taf-society.github.io/Bilge.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://taf-society.github.io/Bilge.jl/dev/) [![Build Status](https://github.com/taf-society/Bilge.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/taf-society/Bilge.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/taf-society/Bilge.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/taf-society/Bilge.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://taf-society.github.io/Zana.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://taf-society.github.io/Zana.jl/dev/) [![Build Status](https://github.com/taf-society/Zana.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/taf-society/Zana.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/taf-society/Zana.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/taf-society/Zana.jl)
 
-**Bilge** is a REPL-based AI coding copilot for Julia. It connects to LLMs (OpenAI, Ollama, or any OpenAI-compatible API) and gives them tools to read, write, edit, and search your codebase — all from an interactive terminal session.
+**Zana** is a REPL-based AI coding copilot for Julia. It connects to LLMs (OpenAI, Anthropic Claude, Ollama, or any OpenAI-compatible API) and gives them tools to read, write, edit, and search your codebase — all from an interactive terminal session.
 
-Bilge — Turkish for "wise", embodies the pursuit of intelligent assistance through language models. Like a knowledgeable companion at your side, Bilge brings the reasoning power of modern AI directly into your Julia development workflow.
+Zana — Kurdish for "wise/scholar", embodies the pursuit of intelligent assistance through language models. Like a knowledgeable companion at your side, Zana brings the reasoning power of modern AI directly into your Julia development workflow.
 
 > This site documents the development version. After your first tagged release, see **stable** docs for the latest release.
 
@@ -21,72 +21,81 @@ Learn more at [taf-society.org](https://taf-society.org/).
 
 ## Installation
 
-Bilge is under active development. For the latest dev version:
+Zana is under active development. For the latest dev version:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/taf-society/Bilge.jl")
+Pkg.add(url="https://github.com/taf-society/Zana.jl")
 ```
 
 For local development:
 
 ```julia
-] dev /path/to/Bilge.jl
+] dev /path/to/Zana.jl
 ```
 
 ---
 
 ## REPL Interface (Primary Usage)
 
-Bilge provides an interactive REPL that gives an LLM full access to your codebase through 7 built-in tools. This is the **recommended approach** for most users.
+Zana provides an interactive REPL that gives an LLM full access to your codebase through 7 built-in tools. This is the **recommended approach** for most users.
 
 ### Quick Example: Ollama
 
 ```julia
-using Bilge
+using Zana
 
-bilge(ollama=true, model="qwen3")
+zana(ollama=true, model="qwen3")
+```
+
+### Quick Example: Anthropic Claude
+
+```julia
+using Zana
+
+# Reads ANTHROPIC_API_KEY from environment
+zana(claude=true)
 ```
 
 ### Quick Example: OpenAI
 
 ```julia
-using Bilge
+using Zana
 
 # Reads OPENAI_API_KEY from environment
-bilge()
+zana()
 
 # Or pass the key directly
-bilge(api_key="sk-...")
+zana(api_key="sk-...")
 ```
 
 ### Quick Example: Any OpenAI-Compatible API
 
 ```julia
-using Bilge
+using Zana
 
-bilge(api_key="your-key", base_url="https://api.example.com/v1", model="your-model")
+zana(api_key="your-key", base_url="https://api.example.com/v1", model="your-model")
 ```
 
 Once inside the REPL, the LLM can autonomously read files, search code, run commands, and make edits to help you with any coding task.
 
 !!! tip "Available Commands"
-    Type `/help` inside the Bilge REPL to see all available commands. Use `/exit` to quit.
+    Type `/help` inside the Zana REPL to see all available commands. Use `/exit` to quit.
 
 ---
 
 ## Programmatic Usage (Agent API)
 
-For integration into scripts or custom workflows, use `BilgeAgent` and `process_turn` directly:
+For integration into scripts or custom workflows, use `ZanaAgent` and `process_turn` directly:
 
 ```julia
-using Bilge
+using Zana
 
-config = BilgeConfig(
+config = ZanaConfig(
     ollama = OllamaConfig(model="qwen3")
 )
 
-agent = BilgeAgent(config, pwd())
+agent = ZanaAgent(config, pwd())
 result = process_turn(agent, "List all Julia files in this project")
 
 # Access the response
@@ -102,7 +111,7 @@ end
 
 ## Available Tools
 
-Bilge equips the LLM with 7 coding tools:
+Zana equips the LLM with 7 coding tools:
 
 | Tool | Description | Use Case |
 |------|-------------|----------|
@@ -120,10 +129,10 @@ For detailed documentation on each tool, see the [Tools Guide](tools.md).
 
 ## Key Features
 
-- **Multiple LLM Backends** — OpenAI, Ollama, or any OpenAI-compatible API
+- **Multiple LLM Backends** — OpenAI, Anthropic Claude, Ollama, or any OpenAI-compatible API
 - **7 Built-in Tools** — Read, write, edit, search, and run commands
 - **Interactive REPL** — Conversational coding with full context
-- **Programmatic API** — Use `BilgeAgent` directly in scripts
+- **Programmatic API** — Use `ZanaAgent` directly in scripts
 - **Minimal Dependencies** — Only **HTTP**, **JSON3**, **UUIDs**
 - **Multi-line Input** — Backslash continuation for complex prompts
 - **Token Tracking** — Monitor LLM usage across the session
@@ -142,6 +151,7 @@ MIT License.
 - **User Guide** pages:
   - [REPL Interface](repl.md) — Commands, multi-line input, and session management
   - [Tools](tools.md) — Detailed documentation for all 7 coding tools
-  - [Configuration](configuration.md) — `BilgeConfig`, `LLMConfig`, `OllamaConfig`
+  - [Configuration](configuration.md) — `ZanaConfig`, `LLMConfig`, `OllamaConfig`, `ClaudeConfig`
   - [Ollama Integration](ollama.md) — Local model setup, utilities, and tips
+  - [Claude Integration](claude.md) — Anthropic Claude setup and usage
 - **[API Reference](api.md)** — Complete API documentation
