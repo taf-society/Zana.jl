@@ -14,6 +14,8 @@ endpoint (`/v1/chat/completions`).
 - `host::String` - Ollama server address (default: "http://localhost:11434")
 - `max_tokens::Int` - Maximum tokens in response (default: 32768)
 - `temperature::Float64` - Sampling temperature (default: 0.1)
+- `repeat_penalty::Float64` - Repetition penalty (default: 1.2; Ollama default is 1.1)
+- `frequency_penalty::Float64` - Frequency penalty for OpenAI-compat mode (default: 0.0)
 - `use_openai_compat::Bool` - Use OpenAI-compatible endpoint (default: false)
 """
 Base.@kwdef struct OllamaConfig
@@ -21,6 +23,8 @@ Base.@kwdef struct OllamaConfig
     host::String = "http://localhost:11434"
     max_tokens::Int = 32768
     temperature::Float64 = 0.1
+    repeat_penalty::Float64 = 1.2
+    frequency_penalty::Float64 = 0.0
     use_openai_compat::Bool = false
 end
 
@@ -99,7 +103,8 @@ function call_ollama(config::OllamaConfig, messages::Vector{Message}, tools::Vec
         "stream" => false,
         "options" => Dict(
             "temperature" => config.temperature,
-            "num_predict" => config.max_tokens
+            "num_predict" => config.max_tokens,
+            "repeat_penalty" => config.repeat_penalty
         )
     )
 
@@ -132,7 +137,8 @@ function call_ollama_openai_compat(config::OllamaConfig, messages::Vector{Messag
         "model" => config.model,
         "messages" => messages_spec,
         "max_tokens" => config.max_tokens,
-        "temperature" => config.temperature
+        "temperature" => config.temperature,
+        "frequency_penalty" => config.frequency_penalty
     )
 
     if !isempty(tools)

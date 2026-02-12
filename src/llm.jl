@@ -13,6 +13,7 @@ Base.@kwdef struct LLMConfig
     base_url::String = "https://api.openai.com/v1"
     max_tokens::Int = 4096
     temperature::Float64 = 0.1
+    frequency_penalty::Float64 = 0.0
 end
 
 """
@@ -89,7 +90,8 @@ function call_llm(config::LLMConfig, messages::Vector{Message}, tools::Vector{To
         "model" => config.model,
         "messages" => messages_spec,
         "max_tokens" => config.max_tokens,
-        "temperature" => config.temperature
+        "temperature" => config.temperature,
+        "frequency_penalty" => config.frequency_penalty
     )
 
     if !isempty(tools)
